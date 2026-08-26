@@ -1,0 +1,51 @@
+name: Rocket Stock Scanner
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every hour on weekdays during the broad US market window.
+    # GitHub cron uses UTC and scheduled runs may be delayed.
+    - cron: "12 13-22 * * 1-5"
+
+concurrency:
+  group: rocket-stock-scanner
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scanner
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+
+          MIN_PRICE: "2"
+          MAX_PRICE: "50"
+          MIN_PREVIOUS_VOLUME: "300000"
+          MIN_DOLLAR_VOLUME: "3000000"
+          MAX_HISTORY_SYMBOLS: "250"
+          MAX_RESULTS: "8"
+          MIN_SCORE: "60"
+          HISTORY_CALENDAR_DAYS: "150"
+          SNAPSHOT_BATCH_SIZE: "150"
+          BAR_BATCH_SIZE: "50"
+          FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+
+        run: python src/main.py
