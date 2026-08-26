@@ -1,4 +1,4 @@
-name: Test Telegram
+name: Test Alpaca
 
 on:
   workflow_dispatch:
@@ -8,12 +8,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send Telegram test message
+      - name: Download repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Test Alpaca connection
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}
-        run: |
-          curl --fail --silent --show-error \
-            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_USER_ID}" \
-            --data-urlencode "text=✅ Rocket Stock Scanner V2 connected successfully"
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+        run: python test_alpaca.py
